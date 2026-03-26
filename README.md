@@ -5,7 +5,7 @@
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow.svg)
 ![Code Review](https://img.shields.io/badge/IA-assisted-blueviolet.svg)
 
-Implementação acadêmica do **cliente TFTP** em Python, com interface de linha de comando, seguindo as especificações da RFC 1350. Este projeto faz parte da disciplina **Desenvolvimento de Jogos Multiplayer** e tem como foco o estudo do protocolo TFTP, boas práticas de codificação (PEP 8) e organização do trabalho com pull requests no Git.
+Implementação acadêmica do **cliente TFTP** em Python, com interface de linha de comando, seguindo as especificações da RFC 1350. Este projeto faz parte da disciplina **TÓPICOS ESPECIAIS PARA COMPUTAÇÃO I** e tem como foco o estudo do protocolo TFTP, boas práticas de codificação (PEP 8) e organização do trabalho com pull requests no Git.
 
 ## 📝 Descrição da atividade
 
@@ -107,8 +107,8 @@ C4Component
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/nome-do-repositorio.git
-cd nome-do-repositorio
+git clone https://github.com/JulianaBallin/tftp-client.git
+cd tftp-client
 
 # Crie e ative o ambiente virtual
 python -m venv .venv
@@ -195,6 +195,6 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 <div align="center">
   Desenvolvido para fins acadêmicos - Universidade do Estado do Amazonas (UEA)<br>
-  <strong>Juliana Ballin Lima</strong> e equipe
+  <strong>Equipe 4</strong>
 </div>
 ```
