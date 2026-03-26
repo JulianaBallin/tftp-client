@@ -1,200 +1,130 @@
-# 📦 TFTP Python CLI – Cliente
+<h1 align="center">📡 TFTP Python CLI - Cliente</h1>
 
-![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow.svg)
-![Code Review](https://img.shields.io/badge/IA-assisted-blueviolet.svg)
+<p align="center">
+  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGpydWRiM3QwdGk3c3hzbXQ3YzJ5aGhzZ2N6MmRtejM0aWN5Z2h1eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26BRzozg4TCBXv6k4/giphy.gif" width="200">
+</p>
 
-Implementação acadêmica do **cliente TFTP** em Python, com interface de linha de comando, seguindo as especificações da RFC 1350. Este projeto faz parte da disciplina **TÓPICOS ESPECIAIS PARA COMPUTAÇÃO I** e tem como foco o estudo do protocolo TFTP, boas práticas de codificação (PEP 8) e organização do trabalho com pull requests no Git.
+<p align="center">
+  Cliente TFTP em Python, seguindo a RFC 1350, com interface CLI e arquitetura modular.
+  Desenvolvido para disciplina de Tópicos Especiais para Computação I.
+</p>
 
-## 📝 Descrição da atividade
+<h1 align="center">📝 Descrição do Projeto</h1>
 
-Esta atividade tem como objetivo estudar o protocolo TFTP, compreender o fluxo de trabalho com pull requests em Git, modelar a arquitetura do sistema por meio de diagramas C4 e implementar, em Python, um **cliente TFTP** com interface CLI.
+Este projeto implementa um **cliente TFTP** completo, capaz de realizar downloads (GET) e uploads (PUT) de arquivos. O código segue as especificações da RFC 1350, utilizando UDP, blocos de 512 bytes e confirmações (ACK). A arquitetura é separada em módulos: um para a lógica de transferência e outro para a codificação/decodificação dos pacotes.
 
-O projeto foi desenvolvido considerando:
-- 📚 estudo do protocolo TFTP a partir da RFC 1350;
-- ✨ adoção de boas práticas de codificação com PEP 8;
-- 🌿 uso de branches e pull requests para colaboração;
-- 🧪 testes com servidores TFTP externos em diferentes sistemas operacionais.
+O projeto inclui:
+- Diagrama de componentes C4 no README e em `docs/diagrams`.
+- Testes unitários com `unittest`.
+- Interface de linha de comando (CLI) via `argparse`.
+- Suporte apenas ao modo **octet** (binário), que é o mais comum.
 
-## 👥 Equipe (Client)
+<h1 align="center">🤖 Tecnologias Utilizadas</h1>
 
-| Membro | Matrícula |
-|--------|-----------|
-| 👤 Juliana Ballin Lima | 2315310011 |
-| 👤 João Lucas Noronha de Castro | 2315310009 |
-| 👤 Leonardo Castro da Silva | 2215310016 |
-| 👤 Leonardo Melo Crispim | 2315310036 |
-| 👤 Lucas Carvalho dos Santos | 2315310012 |
-| 👤 Renato Barbosa de Carvalho | 2315310021 |
-| 👤 Vinicius Souza Costa | 2315310024 |
+<p align="center">
+  <a href="https://www.python.org"><img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue?style=for-the-badge&logo=python"></a>
+  <a href="https://docs.python.org/3/library/unittest.html"><img alt="Unittest" src="https://img.shields.io/badge/unittest-✔-green?style=for-the-badge"></a>
+  <a href="https://www.python.org/dev/peps/pep-0008/"><img alt="PEP 8" src="https://img.shields.io/badge/PEP%208-✔-yellow?style=for-the-badge"></a>
+  <a href="https://git-scm.com/"><img alt="Git" src="https://img.shields.io/badge/git-✔-orange?style=for-the-badge&logo=git"></a>
+</p>
 
-> **Observação**: O servidor TFTP correspondente está sendo desenvolvido por outra parte da equipe, mas este cliente é capaz de se comunicar com qualquer servidor que siga a RFC 1350.
-
-## 🤖 Uso de IA no Desenvolvimento
-
-Este projeto utilizou IA (ChatGPT e DeepSeek) para auxiliar na revisão de código, sugestões de boas práticas, formatação de commits e documentação do README.
-
-> **Nota**: Todo código gerado ou sugerido por IA foi revisado e testado pela equipe antes de ser integrado ao projeto.
-
-## 📁 Estrutura do Projeto (Cliente)
+<h1 align="center">📁 Estrutura do Projeto</h1>
 
 ```bash
 📦 tftp-client
 ├── 📄 client.py                 # Cliente TFTP (GET/PUT)
 ├── 📄 tftp_packets.py           # Codificação/decodificação de pacotes
-├── 📄 requirements.txt          # Dependências do projeto
+├── 📄 requirements.txt          # Dependências (pytest, flake8, etc.)
 ├── 📄 .flake8                   # Configuração de lint
 ├── 📄 .gitignore                # Arquivos ignorados pelo Git
-├── 📄 LICENSE                   # Licença do projeto
-├── 📄 README.md                 # Documentação principal
+├── 📄 LICENSE                   # MIT
+├── 📄 README.md                 # Este arquivo
 ├── 📁 tests/                    # Testes unitários
-│   └── 📄 test_tftp_packets.py
+│   ├── 📄 test_tftp_packets.py
 │   └── 📄 test_client.py
-└── 📁 docs/                     # Documentação
-    └── 📁 diagrams/              # Diagramas C4
-        └── 📄 01_contexto.png
-        └── 📄 02_containers.png
-        └── 📄 03_componentes_cliente.png
-        └── 📄 04_codigo.png               
+└── 📁 docs/diagrams/            # Diagramas C4 (imagens exportadas)
+    ├── 📄 01_contexto.png
+    ├── 📄 02_containers.png
+    ├── 📄 03_componentes_cliente.png
+    └── 📄 04_codigo.png
 ```
 
-## 🧠 Visão geral do protocolo TFTP
-
-O TFTP é um protocolo simples de transferência de arquivos baseado em UDP. Ele foi projetado para cenários leves, como bootstrap de dispositivos, envio de arquivos de configuração e transferência simples em redes locais.
-
-### Características principais:
-- 📡 usa UDP;
-- 🔌 porta inicial 69 para requisições;
-- 📖 suporta leitura (RRQ) e escrita (WRQ);
-- 📦 transmite dados em blocos de até 512 bytes;
-- ✅ usa ACK para confirmar cada bloco;
-- 🏁 encerra a transferência quando o último pacote DATA possui menos de 512 bytes.
-
-## 🧩 Diagrama C4 – Cliente TFTP
-
-O diagrama abaixo mostra os principais componentes do cliente TFTP e sua interação com o usuário, com o servidor remoto e com o módulo de codificação/decodificação de pacotes.
+<h1 align="center">🧩 Diagrama C4 – Cliente TFTP</h1>
 
 ```mermaid
 C4Component
     title Diagrama de Componentes do Cliente TFTP
 
     Container_Boundary(client_app, "TFTP Client App") {
-        Component(cli_client, "CLI do Cliente", "Python/Argparse", "Interface de linha de comando para usuários.")
-        Component(client_core, "Client Core", "Python/Socket", "Gerencia o fluxo de transferência (RRQ/WRQ).")
+        Component(cli_client, "CLI do Cliente", "Python/Argparse", "Interface de linha de comando.")
+        Component(client_core, "Client Core", "Python/Socket", "Gerencia o fluxo de transferência.")
     }
 
-    Component(packets, "Protocol Encoder/Decoder", "Python/Struct", "Codifica e decodifica pacotes TFTP (RFC 1350).")
-    Component(errors, "Error Handling", "Python/Enum", "Centraliza códigos e mensagens de erro.")
+    Component(packets, "Protocol Encoder/Decoder", "Python/Struct", "Codifica e decodifica pacotes.")
+    Component(errors, "Error Handling", "Python/Enum", "Códigos e mensagens de erro.")
 
     Rel(cli_client, client_core, "Usa")
     Rel(client_core, packets, "Usa")
     Rel(client_core, errors, "Usa")
 
     System_Ext(server, "Servidor TFTP", "Qualquer servidor que siga a RFC 1350")
-    Rel(client_core, server, "Envia pacotes UDP (porta 69 ou efêmera)", "UDP")
+    Rel(client_core, server, "UDP", "porta 69 ou efêmera")
 ```
 
-![Diagrama de componentes do cliente](docs/diagrams/03_componentes_cliente.png)
+<p align="center">
+  <img src="docs/diagrams/03_componentes_cliente.png" alt="Diagrama de Componentes" width="600">
+</p>
 
-## 🔧 Requisitos
+<h1 align="center">🚀 Como Executar</h1>
 
-- 🐍 Python 3.10+
-- 💻 Sistema operacional Windows, Linux ou macOS
-- 🌿 Git
-
-## 📦 Instalação
-
+### Instalação
 ```bash
-# Clone o repositório
 git clone https://github.com/JulianaBallin/tftp-client.git
 cd tftp-client
-
-# Crie e ative o ambiente virtual
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
-
-# No Windows PowerShell:
-# .venv\Scripts\Activate.ps1
-
-# Instale as dependências
+# .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 ```
 
-## 🚀 Como executar o cliente
-
-### Download (GET) – receber arquivo do servidor
+### Download (GET)
 ```bash
-python client.py get --host 127.0.0.1 --port 6969 --remote arquivo_remoto.txt --local arquivo_local.txt
+python client.py get --host 127.0.0.1 --port 69 --remote arquivo.txt --local destino.txt
 ```
 
-### Upload (PUT) – enviar arquivo para o servidor
+### Upload (PUT)
 ```bash
-python client.py put --host 127.0.0.1 --port 6969 --local arquivo_local.txt --remote arquivo_remoto.txt
+python client.py put --host 127.0.0.1 --port 69 --local local.txt --remote remoto.txt
 ```
 
-## ✅ Testes com servidores externos
+<h1 align="center">🧪 Testes</h1>
 
-Para verificar o funcionamento do cliente, utilize um servidor TFTP externo (como o cliente TFTP do Windows, Linux ou macOS) ou o servidor desenvolvido pelos colegas.
-
-### 1. Inicie um servidor TFTP
-- **Windows**: Ative o recurso "Cliente TFTP" em "Recursos do Windows" e utilize o comando `tftp` no modo servidor ou use um servidor de terceiros (ex.: SolarWinds TFTP Server).
-- **Linux/macOS**: Instale um servidor como `atftpd` ou `tftpd-hpa`.
-
-### 2. Teste de download (GET)
 ```bash
-# Coloque um arquivo de teste no diretório do servidor
-echo "Conteúdo do arquivo" > /srv/tftp/teste.txt
+# Executar testes unitários
+python -m unittest discover tests
 
-# Execute o cliente para baixar
-python client.py get --host 127.0.0.1 --port 69 --remote teste.txt --local baixado.txt
+# Com cobertura (se pytest instalado)
+pytest tests/ --cov=. --cov-report=term
 ```
 
-### 3. Teste de upload (PUT)
-```bash
-# Crie um arquivo local
-echo "Enviado pelo cliente" > enviar.txt
+<h1 align="center">📚 Referências</h1>
 
-# Execute o cliente para enviar
-python client.py put --host 127.0.0.1 --port 69 --local enviar.txt --remote recebido.txt
+- [RFC 1350 – TFTP](https://datatracker.ietf.org/doc/html/rfc1350)
+- [Git Pull Request](https://www.geeksforgeeks.org/git/git-pull-request/)
+- [PEP 8 – Style Guide](https://www.python.org/dev/peps/pep-0008/)
 
-# Verifique se o arquivo apareceu no diretório do servidor
-cat /srv/tftp/recebido.txt
-```
+<h1 align="center">👥 Equipe</h1>
 
-## 🧪 Testes unitários
-
-### Executar testes unitários
-```bash
-pytest tests/ -v
-```
-
-### Verificar cobertura
-```bash
-pytest --cov=. tests/ --cov-report=term-missing
-```
-
-### Verificar estilo de código
-```bash
-flake8 .
-black --check .
-```
-
-## 📚 Referências
-
-- [RFC 1350 - The TFTP Protocol (Revision 2)](https://datatracker.ietf.org/doc/html/rfc1350)
-- [Git Pull Request - GeeksforGeeks](https://www.geeksforgeeks.org/git/git-pull-request/)
-- [Conventional Commits](https://www.conventionalcommits.org/)
-- [PEP 8 - Style Guide](https://www.python.org/dev/peps/pep-0008/)
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+| Nome | Matrícula |
+|------|-----------|
+| Juliana Ballin Lima | 2315310011 |
+| João Lucas Noronha de Castro | 2315310009 |
+| Leonardo Castro da Silva | 2215310016 |
+| Leonardo Melo Crispim | 2315310036 |
+| Lucas Carvalho dos Santos | 2315310012 |
+| Renato Barbosa de Carvalho | 2315310021 |
+| Vinicius Souza Costa | 2315310024 |
 
 ---
 
-<div align="center">
-  Desenvolvido para fins acadêmicos - Universidade do Estado do Amazonas (UEA)<br>
-  <strong>Equipe 4</strong>
-</div>
-```
+<h3 align="center">MIT © Equipe 4 – UEA</h3>
