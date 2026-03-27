@@ -1,7 +1,7 @@
 <h1 align="center">📡 TFTP Python CLI - Cliente</h1>
 
 <p align="center">
-  <img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGpydWRiM3QwdGk3c3hzbXQ3YzJ5aGhzZ2N6MmRtejM0aWN5Z2h1eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26BRzozg4TCBXv6k4/giphy.gif" width="200">
+  <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExamN5c3U2ZXprMmk4eWx1M3Zyem9pazBhd2gyOGlqeHV0MHNlYXNwdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9YEpoKEGPZyVFfRuYm/giphy.gif" width="200">
 </p>
 
 <p align="center">
@@ -9,7 +9,7 @@
   Desenvolvido para disciplina de Tópicos Especiais para Computação I.
 </p>
 
-<h1 align="center">📝 Descrição do Projeto</h1>
+<h2 align="center">📝 Descrição do Projeto</h2>
 
 Este projeto implementa um **cliente TFTP** completo, capaz de realizar downloads (GET) e uploads (PUT) de arquivos. O código segue as especificações da RFC 1350, utilizando UDP, blocos de 512 bytes e confirmações (ACK). A arquitetura é separada em módulos: um para a lógica de transferência e outro para a codificação/decodificação dos pacotes.
 
@@ -19,7 +19,7 @@ O projeto inclui:
 - Interface de linha de comando (CLI) via `argparse`.
 - Suporte apenas ao modo **octet** (binário), que é o mais comum.
 
-<h1 align="center">🤖 Tecnologias Utilizadas</h1>
+<h2 align="center">🤖 Tecnologias Utilizadas</h2>
 
 <p align="center">
   <a href="https://www.python.org"><img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue?style=for-the-badge&logo=python"></a>
@@ -28,25 +28,21 @@ O projeto inclui:
   <a href="https://git-scm.com/"><img alt="Git" src="https://img.shields.io/badge/git-✔-orange?style=for-the-badge&logo=git"></a>
 </p>
 
-<h1 align="center">📁 Estrutura do Projeto</h1>
+<h2 align="center">📁 Estrutura do Projeto</h2>
 
 ```bash
 📦 tftp-client
-├── 📄 client.py                 # Cliente TFTP (GET/PUT)
-├── 📄 tftp_packets.py           # Codificação/decodificação de pacotes
-├── 📄 requirements.txt          # Dependências (pytest, flake8, etc.)
-├── 📄 .flake8                   # Configuração de lint
-├── 📄 .gitignore                # Arquivos ignorados pelo Git
-├── 📄 LICENSE                   # MIT
-├── 📄 README.md                 # Este arquivo
-├── 📁 tests/                    # Testes unitários
-│   ├── 📄 test_tftp_packets.py
-│   └── 📄 test_client.py
-└── 📁 docs/diagrams/            # Diagramas C4 (imagens exportadas)
-    ├── 📄 01_contexto.png
-    ├── 📄 02_containers.png
-    ├── 📄 03_componentes_cliente.png
-    └── 📄 04_codigo.png
+├── 📄 client.py # Lógica principal do cliente
+├── 📄 tftp_packets.py # Codificação/decodificação de pacotes
+├── 📄 logger.py # Logs coloridos
+├── 📄 exceptions.py # Exceções personalizadas
+├── 📄 cli.py # CLI e menu interativo
+├── 📄 main.py # Ponto de entrada (modo automático)
+├── 📄 requirements.txt # Dependências
+├── 📄 LICENSE # MIT
+├── 📄 README.md
+├── 📁 tests/ # Testes unitários
+└── 📁 docs/diagrams/ # Diagramas C4
 ```
 
 <h1 align="center">🧩 Diagrama C4 – Cliente TFTP</h1>
@@ -97,7 +93,7 @@ python client.py get --host 127.0.0.1 --port 69 --remote arquivo.txt --local des
 python client.py put --host 127.0.0.1 --port 69 --local local.txt --remote remoto.txt
 ```
 
-<h1 align="center">🧪 Testes</h1>
+<h2 align="center">🧪 Testes</h2>
 
 ```bash
 # Executar testes unitários
@@ -107,13 +103,13 @@ python -m unittest discover tests
 pytest tests/ --cov=. --cov-report=term
 ```
 
-<h1 align="center">📚 Referências</h1>
+<h2 align="center">📚 Referências</h2>
 
 - [RFC 1350 – TFTP](https://datatracker.ietf.org/doc/html/rfc1350)
 - [Git Pull Request](https://www.geeksforgeeks.org/git/git-pull-request/)
 - [PEP 8 – Style Guide](https://www.python.org/dev/peps/pep-0008/)
 
-<h1 align="center">👥 Equipe</h1>
+<h2 align="center">👥 Equipe</h2>
 
 | Nome | Matrícula |
 |------|-----------|
