@@ -5,7 +5,7 @@ Cliente TFTP para linha de comando.
 Implementa GET e PUT conforme RFC 1350, modo octet.
 """
 
-# client.py
+import os
 import socket
 from tftp_packets import (
     Opcode,
@@ -216,3 +216,56 @@ class TFTPClient:
         finally:
             if self.socket:
                 self.socket.close()
+                
+    def criar_pasta_servidor(self, caminho_completo: str) -> bool:
+        """
+        Tenta criar a estrutura de pastas no servidor enviando um arquivo vazio.
+        Retorna True se a pasta existe ou foi criada com sucesso.
+        """
+        # Verifica se o caminho tem pasta (ex: "grupo4/arquivo.txt")
+        partes = caminho_completo.split('/')
+        if len(partes) <= 1:
+            return True  # sem pasta, já existe
+        
+        nome_pasta = partes[0]
+        arquivo_teste = f"{nome_pasta}/.tftp_test_{os.getpid()}"
+        
+        try:
+            # Cria um socket temporário
+            socket_temp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            socket_temp.settimeout(self.timeout)
+            
+            # Envia WRQ para o arquivo de teste
+            wrq = criar_wrq(arquivo_teste, "octet")
+            socket_temp.sendto(wrq, (self.servidor, self.porta))
+            
+            # Aguarda resposta
+            socket_temp.settimeout(self.timeout)
+            resposta, endereco = socket_temp.recvfrom(65535)
+            
+            pacote = decodificar_pacote(resposta)
+            
+            # Se recebeu ACK(0), a pasta existe ou foi criada
+            if pacote and pacote.get("opcode") == Opcode.ACK and pacote.get("bloco") == 0:
+                # Envia um bloco vazio para finalizar a transferência
+                dados_vazios = criar_data(1, b"")
+                socket_temp.sendto(dados_vazios, (self.servidor, endereco[1]))
+                logger.debug(f"Pasta '{nome_pasta}' criada ou já existe")
+                socket_temp.close()
+                return True
+            
+            # Se recebeu erro, pode ser que a pasta não exista
+            if pacote and pacote.get("opcode") == Opcode.ERROR:
+                logger.debug(f"Erro ao criar pasta: {pacote.get('mensagem')}")
+                socket_temp.close()
+                return False
+                
+            socket_temp.close()
+            return False
+            
+        except socket.timeout:
+            logger.debug("Timeout ao tentar criar pasta")
+            return False
+        except Exception as e:
+            logger.debug(f"Erro ao criar pasta: {e}")
+            return False
