@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+
+skinparam backgroundColor white
+skinparam shadowing true
+skinparam roundcorner 30
+skinparam linetype ortho
+skinparam DefaultFontName Arial
+skinparam DefaultFontSize 16
+
+skinparam actor {
+  BackgroundColor #FFEB3B
+  BorderColor #F57F17
+  FontSize 18
+}
+
+skinparam rectangle {
+  BackgroundColor #E3F2FD-#BBDEFB
+  BorderColor #1E88E5
+  FontSize 14
+  RoundCorner 15
+}
+
+actor "Usuário" as user
+
+rectangle "Cliente TFTP\n(Python CLI)" as cliente
+rectangle "Servidor TFTP\n(Remoto)" as servidor
+
+user --> cliente : usa (menu / CLI)
+cliente --> servidor : UDP (GET/PUT)
+
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+
+skinparam backgroundColor white
+skinparam shadowing true
+skinparam roundcorner 30
+skinparam linetype ortho
+skinparam DefaultFontName Arial
+skinparam DefaultFontSize 16
+
+skinparam class {
+  BackgroundColor #E1F5FE-#B3E5FC
+  BorderColor #0288D1
+  RoundCorner 15
+  FontSize 14
+}
+
+class TFTPClient {
+  servidor : str
+  porta : int
+  timeout : int
+  max_retries : int
+
+  +get()
+  +put()
+  +criar_pasta_servidor()
+
+  -_enviar_com_retransmissao()
+  -_receber_bloco()
+}
+
+class tftp_packets {
+  +criar_rrq()
+  +criar_wrq()
+  +criar_data()
+  +criar_ack()
+}
+
+class exceptions {
+  TFTPError
+  TFTPTimeoutError
+  TFTPProtocolError
+}
+
+TFTPClient --> tftp_packets
+TFTPClient --> exceptions
+
+@enduml
