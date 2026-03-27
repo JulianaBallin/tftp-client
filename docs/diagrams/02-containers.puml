@@ -1,0 +1,29 @@
+@startuml
+left to right direction
+
+skinparam backgroundColor white
+skinparam shadowing true
+skinparam roundcorner 30
+skinparam linetype ortho
+skinparam DefaultFontName Arial
+skinparam DefaultFontSize 16
+
+skinparam rectangle {
+  BackgroundColor #E8F5E9-#C8E6C9
+  BorderColor #43A047
+  RoundCorner 20
+}
+
+actor "Usuário" as user
+
+rectangle "CLI / Menu\n(cli.py)" as cli
+rectangle "Cliente TFTP\n(client.py)" as app
+rectangle "Arquivos Locais\n(downloads/uploads)" as storage
+rectangle "Servidor TFTP" as server
+
+user --> cli
+cli --> app
+app --> storage : lê/escreve
+app --> server : UDP (TFTP)
+
+@enduml
