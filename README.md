@@ -353,12 +353,6 @@ sudo chown -R tftp:tftp /srv/tftp
 | Nome | Matrícula |
 |------|-----------|
 | Juliana Ballin Lima | 2315310011 |
-| João Lucas Noronha de Castro | 2315310009 |
-| Leonardo Castro da Silva | 2215310016 |
-| Leonardo Melo Crispim | 2315310036 |
-| Lucas Carvalho dos Santos | 2315310012 |
-| Renato Barbosa de Carvalho | 2315310021 |
-| Vinicius Souza Costa | 2315310024 |
 
 ---
 
