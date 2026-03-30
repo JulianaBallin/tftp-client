@@ -9,24 +9,49 @@ com o usuário e chama o cliente TFTP correspondente.
 import os
 import sys
 from pathlib import Path
+
 from client import TFTPClient
 import logger
 
 # Diretórios locais
 PASTA_DOWNLOADS = Path("downloads")
 PASTA_UPLOADS = Path("uploads")
-PASTA_SERVIDOR = "grupo4"  # pasta padrão no servidor
+
 
 def garantir_pastas():
     """Cria as pastas locais se não existirem."""
     PASTA_DOWNLOADS.mkdir(exist_ok=True)
     PASTA_UPLOADS.mkdir(exist_ok=True)
 
-def listar_arquivos_local(pasta: Path) -> list:
+
+def listar_arquivos_local(pasta: Path) -> list[str]:
     """Retorna lista de nomes de arquivos em uma pasta."""
     if not pasta.exists():
         return []
     return [f.name for f in pasta.iterdir() if f.is_file()]
+
+
+def montar_caminho_remoto(nome_arquivo: str) -> str:
+    """
+    Monta o caminho remoto opcionalmente com uma pasta no servidor.
+
+    Args:
+        nome_arquivo: Nome base do arquivo remoto.
+
+    Returns:
+        Caminho remoto final informado pelo usuário.
+    """
+    usar_pasta = input(
+        "Deseja usar uma pasta no servidor? (ex: grupo4) [s/N]: "
+    ).strip().lower()
+
+    if usar_pasta == "s":
+        pasta = input("Nome da pasta no servidor: ").strip().strip("/")
+        if pasta:
+            return f"{pasta}/{nome_arquivo}"
+
+    return nome_arquivo
+
 
 def menu_interativo():
     """Menu principal com opções de GET, PUT e sair."""
@@ -44,42 +69,43 @@ def menu_interativo():
         opcao = input("Escolha: ").strip()
 
         if opcao == "1":
-            # GET
             host = input("Host do servidor: ").strip()
             if not host:
                 host = "127.0.0.1"
+
             porta = input("Porta (padrão 69): ").strip()
             porta = int(porta) if porta else 69
+
             remoto = input("Nome do arquivo remoto: ").strip()
             if not remoto:
                 logger.error("Nome do arquivo remoto é obrigatório.")
                 continue
 
-            # Adiciona a pasta grupo4 no caminho
-            remoto_completo = f"{PASTA_SERVIDOR}/{remoto}"
+            remoto_completo = montar_caminho_remoto(remoto)
             logger.info(f"Buscando: {remoto_completo}")
 
-            local = PASTA_DOWNLOADS / remoto
+            nome_local = Path(remoto).name
+            local = PASTA_DOWNLOADS / nome_local
+
             cliente = TFTPClient(host, porta)
             cliente.get(remoto_completo, str(local))
 
         elif opcao == "2":
-            # PUT com seleção de arquivo da pasta uploads
             host = input("Host do servidor: ").strip()
             if not host:
                 host = "127.0.0.1"
+
             porta = input("Porta (padrão 69): ").strip()
             porta = int(porta) if porta else 69
+
             remoto = input("Nome do arquivo no servidor: ").strip()
             if not remoto:
                 logger.error("Nome do arquivo remoto é obrigatório.")
                 continue
 
-            # Adiciona a pasta grupo4 no caminho
-            remoto_completo = f"{PASTA_SERVIDOR}/{remoto}"
+            remoto_completo = montar_caminho_remoto(remoto)
             logger.info(f"Salvando em: {remoto_completo}")
 
-            # Lista arquivos disponíveis para upload
             arquivos = listar_arquivos_local(PASTA_UPLOADS)
             if not arquivos:
                 logger.warning(f"Nenhum arquivo em '{PASTA_UPLOADS}/'.")
@@ -101,68 +127,44 @@ def menu_interativo():
                 if 0 <= idx < len(arquivos):
                     local_path = PASTA_UPLOADS / arquivos[idx]
 
-                    # Verifica tamanho do arquivo
                     tamanho_bytes = os.path.getsize(local_path)
                     tamanho_mb = tamanho_bytes / (1024 * 1024)
 
-                    if tamanho_bytes > (65535 * 512):  # ~32 MB
-                        logger.warning(f"Arquivo tem {tamanho_mb:.2f} MB, pode exceder limite do servidor.")
+                    if tamanho_bytes > (65535 * 512):
+                        logger.warning(
+                            f"Arquivo tem {tamanho_mb:.2f} MB, pode exceder limite do servidor."
+                        )
                         confirmar = input("Continuar? (s/N): ").strip().lower()
-                        if confirmar != 's':
+                        if confirmar != "s":
                             continue
 
-                    # Sugere extensão automaticamente
                     extensao = os.path.splitext(local_path)[1]
-                    if not remoto.endswith(extensao) and extensao:
-                        sugestao = remoto + extensao
-                        logger.info(f"Sugestão: {PASTA_SERVIDOR}/{sugestao}")
+                    if not remoto_completo.endswith(extensao) and extensao:
+                        sugestao = remoto_completo + extensao
+                        logger.info(f"Sugestão: {sugestao}")
                         usar = input("Usar este nome? (s/N): ").strip().lower()
-                        if usar == 's':
-                            remoto_completo = f"{PASTA_SERVIDOR}/{sugestao}"
+                        if usar == "s":
+                            remoto_completo = sugestao
 
-                    # --- TENTA O UPLOAD ---
                     cliente = TFTPClient(host, porta)
                     resultado = cliente.put(str(local_path), remoto_completo)
-                    
-                    # Se falhou, tenta criar a pasta
+
                     if not resultado:
-                        logger.warning("Falha no upload. Pode ser que a pasta 'grupo4' não exista no servidor.")
-                        criar = input("Tentar criar a pasta automaticamente? (s/N): ").strip().lower()
-                        
-                        if criar == 's':
-                            logger.info("Tentando criar pasta 'grupo4' no servidor...")
-                            cliente_temp = TFTPClient(host, porta, timeout=5, max_retries=2)
-                            
-                            if cliente_temp.criar_pasta_servidor(remoto_completo):
-                                logger.success("Pasta criada ou já existente. Tentando upload novamente...")
-                                resultado = cliente.put(str(local_path), remoto_completo)
-                                if resultado:
-                                    logger.success("Upload concluído após criar pasta!")
-                                else:
-                                    logger.error("Upload ainda falhou. Verifique as permissões do servidor.")
-                            else:
-                                logger.error("Não foi possível criar a pasta automaticamente.")
-                                print("\n" + "=" * 60)
-                                logger.info("📌 Para o administrador do servidor TFTP:")
-                                print("")
-                                print("   Execute os seguintes comandos no servidor:")
-                                print("")
-                                print("   sudo mkdir -p /srv/tftp/grupo4")
-                                print("   sudo chmod 777 /srv/tftp/grupo4")
-                                print("")
-                                print("   Se o servidor estiver em outra porta ou diretório, ajuste o caminho.")
-                                print("")
-                                logger.info("Após criar a pasta, tente o upload novamente.")
-                                print("=" * 60)
-                        else:
-                            logger.info("Upload cancelado.")
-                    
+                        logger.warning("Falha no upload.")
+                        logger.info(
+                            "Verifique se o caminho remoto existe e se o servidor permite "
+                            "escrita/criação de arquivos."
+                        )
+                        logger.info(
+                            "Se o servidor não usar subpastas, informe apenas o nome do arquivo."
+                        )
                 else:
                     logger.error("Número inválido.")
+
             except ValueError:
                 logger.error("Entrada inválida.")
-            except OSError as e:
-                logger.error(f"Erro ao ler arquivo: {e}")
+            except OSError as error:
+                logger.error(f"Erro ao ler arquivo: {error}")
 
         elif opcao == "3":
             arquivos = listar_arquivos_local(PASTA_DOWNLOADS)
@@ -192,9 +194,11 @@ def menu_interativo():
         else:
             logger.error("Opção inválida.")
 
+
 def linha_comando():
-    """Interface via linha de comando (argparse) – mantida para compatibilidade."""
+    """Interface via linha de comando (argparse)."""
     import argparse
+
     parser = argparse.ArgumentParser(description="Cliente TFTP (RFC 1350)")
     subparsers = parser.add_subparsers(dest="comando")
 
@@ -219,9 +223,6 @@ def linha_comando():
         parser.print_help()
         sys.exit(1)
 
-    # Adiciona pasta grupo4 para compatibilidade com linha de comando
-    remote_completo = f"{PASTA_SERVIDOR}/{args.remote}" if args.comando in ["get", "put"] else args.remote
-
     cliente = TFTPClient(
         servidor=args.host,
         porta=args.port,
@@ -231,8 +232,9 @@ def linha_comando():
 
     ok = False
     if args.comando == "get":
-        ok = cliente.get(remote_completo, args.local)
+        ok = cliente.get(args.remote, args.local)
     elif args.comando == "put":
-        ok = cliente.put(args.local, remote_completo)
+        ok = cliente.put(args.local, args.remote)
 
     sys.exit(0 if ok else 1)
+    
