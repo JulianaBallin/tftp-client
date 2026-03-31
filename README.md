@@ -81,7 +81,7 @@ C4Component
 ```
 
 <p align="center">
-  <img src="docs/diagrams/04-codigo-v1.png" width="600">
+  <img src="docs/diagrams/03-componentes-v1.png" width="1200">
 </p>
 
 ---
