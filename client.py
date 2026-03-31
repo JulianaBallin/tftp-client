@@ -29,22 +29,24 @@ class TFTPClient:
         self.porta = porta
         self.timeout = timeout
         self.max_retries = max_retries
-        self.socket = None
-        self.porta_servidor_transferencia = porta
 
-    def _enviar_com_retransmissao(self, dados: bytes, esperar_resposta: bool = True):
+    def _enviar_com_retransmissao(self, sock: socket.socket, dados: bytes, porta_destino: int, tid_esperado: int | None = None, esperar_resposta: bool = True):
         """Envia dados e aguarda resposta com retransmissão."""
         for tentativa in range(self.max_retries):
             try:
-                self.socket.sendto(dados, (self.servidor, self.porta_servidor_transferencia))
+                sock.sendto(dados, (self.servidor, porta_destino))
                 if not esperar_resposta:
                     return (b"", None)
 
-                self.socket.settimeout(self.timeout)
-                resposta, endereco = self.socket.recvfrom(65535)
+                sock.settimeout(self.timeout)
+                resposta, endereco = sock.recvfrom(65535)
 
-                if self.porta_servidor_transferencia == 69:
-                    self.porta_servidor_transferencia = endereco[1]
+                if tid_esperado is not None and endereco[1] != tid_esperado:
+                    logger.warning(f"Pacote recebido de TID desconhecido: {endereco[1]}")
+                    from tftp_packets import criar_error, ErrorCode
+                    erro = criar_error(ErrorCode.UNKNOWN_TID, "Unknown transfer ID")
+                    sock.sendto(erro, endereco)
+                    continue
 
                 return (resposta, endereco)
 
@@ -63,12 +65,20 @@ class TFTPClient:
             msg = pacote.get("mensagem", "")
             raise TFTPFileError(f"Servidor retornou erro {codigo}: {msg}")
 
-    def _receber_bloco(self, bloco_esperado: int):
+    def _receber_bloco(self, sock: socket.socket, bloco_esperado: int, porta_destino: int, tid_esperado: int):
         """Aguarda e valida um bloco DATA, com retransmissão."""
         for tentativa in range(self.max_retries):
             try:
-                self.socket.settimeout(self.timeout)
-                resposta, _ = self.socket.recvfrom(65535)
+                sock.settimeout(self.timeout)
+                resposta, endereco = sock.recvfrom(65535)
+
+                if endereco[1] != tid_esperado:
+                    logger.warning(f"Pacote de bloco recebido de TID desconhecido: {endereco[1]}")
+                    from tftp_packets import criar_error, ErrorCode
+                    erro = criar_error(ErrorCode.UNKNOWN_TID, "Unknown transfer ID")
+                    sock.sendto(erro, endereco)
+                    continue
+
                 pacote = decodificar_pacote(resposta)
 
                 if not pacote:
@@ -85,18 +95,18 @@ class TFTPClient:
                 if pacote.get("bloco") != bloco_esperado:
                     logger.warning(f"Bloco esperado {bloco_esperado}, recebido {pacote.get('bloco')}")
                     # Reenvia ACK do último bloco correto
-                    if bloco_esperado > 1:
-                        ack = criar_ack(bloco_esperado - 1)
-                        self.socket.sendto(ack, (self.servidor, self.porta_servidor_transferencia))
+                    bloco_passado = (bloco_esperado - 1) % 65536
+                    ack = criar_ack(bloco_passado)
+                    sock.sendto(ack, (self.servidor, porta_destino))
                     continue
 
                 return pacote
 
             except socket.timeout:
                 logger.warning(f"Timeout aguardando bloco {bloco_esperado} (tentativa {tentativa + 1})")
-                if bloco_esperado > 1:
-                    ack = criar_ack(bloco_esperado - 1)
-                    self.socket.sendto(ack, (self.servidor, self.porta_servidor_transferencia))
+                bloco_passado = (bloco_esperado - 1) % 65536
+                ack = criar_ack(bloco_passado)
+                sock.sendto(ack, (self.servidor, porta_destino))
                 continue
             except socket.error as e:
                 raise TFTPTransferError(f"Erro de socket: {e}")
@@ -105,13 +115,15 @@ class TFTPClient:
 
     def get(self, nome_remoto: str, nome_local: str) -> bool:
         logger.info(f"Iniciando download: {nome_remoto} -> {nome_local}")
-
+        sock = None
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.settimeout(self.timeout)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(self.timeout)
 
             rrq = criar_rrq(nome_remoto, "octet")
-            resposta, _ = self._enviar_com_retransmissao(rrq)
+            resposta, endereco = self._enviar_com_retransmissao(sock, rrq, self.porta)
+
+            tid_servidor = endereco[1]
 
             pacote = decodificar_pacote(resposta)
             if not pacote or pacote.get("opcode") != Opcode.DATA:
@@ -129,13 +141,13 @@ class TFTPClient:
                 arquivo_bytes.extend(dados)
 
                 ack = criar_ack(bloco_esperado)
-                self.socket.sendto(ack, (self.servidor, self.porta_servidor_transferencia))
+                sock.sendto(ack, (self.servidor, tid_servidor))
 
                 if len(dados) < 512:  # último bloco
                     break
 
-                bloco_esperado += 1
-                pacote = self._receber_bloco(bloco_esperado)
+                bloco_esperado = (bloco_esperado + 1) % 65536
+                pacote = self._receber_bloco(sock, bloco_esperado, tid_servidor, tid_servidor)
 
             with open(nome_local, "wb") as f:
                 f.write(arquivo_bytes)
@@ -147,8 +159,8 @@ class TFTPClient:
             logger.error(f"Erro no download: {e}")
             return False
         finally:
-            if self.socket:
-                self.socket.close()
+            if sock:
+                sock.close()
 
     def put(self, nome_local: str, nome_remoto: str) -> bool:
         logger.info(f"Iniciando upload: {nome_local} -> {nome_remoto}")
@@ -163,12 +175,15 @@ class TFTPClient:
             logger.error(f"Erro ao ler arquivo: {e}")
             return False
 
+        sock = None
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.settimeout(self.timeout)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(self.timeout)
 
             wrq = criar_wrq(nome_remoto, "octet")
-            resposta, _ = self._enviar_com_retransmissao(wrq)
+            resposta, endereco = self._enviar_com_retransmissao(sock, wrq, self.porta)
+
+            tid_servidor = endereco[1]
 
             pacote = decodificar_pacote(resposta)
             if not pacote or pacote.get("opcode") != Opcode.ACK or pacote.get("bloco") != 0:
@@ -183,8 +198,10 @@ class TFTPClient:
                 bloco_dados = dados_arquivo[posicao:posicao + tamanho_bloco]
                 pacote_dados = criar_data(bloco_atual, bloco_dados)
 
-                # Envia com retransmissão
-                resposta, _ = self._enviar_com_retransmissao(pacote_dados)
+                # Envia com retransmissão restrita pelo TID
+                resposta, endereco = self._enviar_com_retransmissao(
+                    sock, pacote_dados, tid_servidor, tid_esperado=tid_servidor
+                )
                 pacote = decodificar_pacote(resposta)
                 if not pacote or pacote.get("opcode") != Opcode.ACK:
                     self._tratar_erro_servidor(pacote)
@@ -193,19 +210,22 @@ class TFTPClient:
                 if pacote.get("bloco") != bloco_atual:
                     raise TFTPProtocolError(f"ACK inesperado: esperado {bloco_atual}, recebido {pacote.get('bloco')}")
 
-                bloco_atual += 1
+                bloco_atual = (bloco_atual + 1) % 65536
                 posicao += tamanho_bloco
 
-                if bloco_atual % 50 == 0:
+                if (posicao // tamanho_bloco) % 50 == 0:
                     prog = min(100, int(posicao * 100 / len(dados_arquivo)))
                     logger.info(f"Progresso: {prog}%")
 
-            # Bloco final vazio (opcional)
-            try:
+            # Bloco final vazio se o tamanho do arquivo for múltiplo de 512
+            if len(dados_arquivo) % 512 == 0:
                 pacote_final = criar_data(bloco_atual, b"")
-                self.socket.sendto(pacote_final, (self.servidor, self.porta_servidor_transferencia))
-            except:
-                pass
+                resposta, _ = self._enviar_com_retransmissao(
+                    sock, pacote_final, tid_servidor, tid_esperado=tid_servidor
+                )
+                pacote = decodificar_pacote(resposta)
+                if not pacote or pacote.get("opcode") != Opcode.ACK or pacote.get("bloco") != bloco_atual:
+                    logger.warning("Erro ao confirmar bloco final vazio")
 
             logger.success(f"Upload concluído: {len(dados_arquivo)} bytes")
             return True
@@ -214,15 +234,15 @@ class TFTPClient:
             logger.error(f"Erro no upload: {e}")
             return False
         finally:
-            if self.socket:
-                self.socket.close()
+            if sock:
+                sock.close()
                 
     def criar_pasta_servidor(self, caminho_completo: str) -> bool:
         """
         Tenta criar a estrutura de pastas no servidor enviando um arquivo vazio.
         Retorna True se a pasta existe ou foi criada com sucesso.
         """
-        # Verifica se o caminho tem pasta (ex: "grupo4/arquivo.txt")
+        # Verifica se o caminho tem pasta
         partes = caminho_completo.split('/')
         if len(partes) <= 1:
             return True  # sem pasta, já existe
@@ -232,35 +252,35 @@ class TFTPClient:
         
         try:
             # Cria um socket temporário
-            socket_temp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            socket_temp.settimeout(self.timeout)
+            sock_temp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock_temp.settimeout(self.timeout)
             
             # Envia WRQ para o arquivo de teste
             wrq = criar_wrq(arquivo_teste, "octet")
-            socket_temp.sendto(wrq, (self.servidor, self.porta))
+            sock_temp.sendto(wrq, (self.servidor, self.porta))
             
             # Aguarda resposta
-            socket_temp.settimeout(self.timeout)
-            resposta, endereco = socket_temp.recvfrom(65535)
+            sock_temp.settimeout(self.timeout)
+            resposta, endereco = sock_temp.recvfrom(65535)
             
             pacote = decodificar_pacote(resposta)
             
-            # Se recebeu ACK(0), a pasta existe ou foi criada
+            # Se receber ACK(0), a pasta existe ou foi criada
             if pacote and pacote.get("opcode") == Opcode.ACK and pacote.get("bloco") == 0:
                 # Envia um bloco vazio para finalizar a transferência
                 dados_vazios = criar_data(1, b"")
-                socket_temp.sendto(dados_vazios, (self.servidor, endereco[1]))
+                sock_temp.sendto(dados_vazios, (self.servidor, endereco[1]))
                 logger.debug(f"Pasta '{nome_pasta}' criada ou já existe")
-                socket_temp.close()
+                sock_temp.close()
                 return True
             
             # Se recebeu erro, pode ser que a pasta não exista
             if pacote and pacote.get("opcode") == Opcode.ERROR:
                 logger.debug(f"Erro ao criar pasta: {pacote.get('mensagem')}")
-                socket_temp.close()
+                sock_temp.close()
                 return False
                 
-            socket_temp.close()
+            sock_temp.close()
             return False
             
         except socket.timeout:
